@@ -1,0 +1,9 @@
+{
+  "name": "api",
+  "private": true,
+  "scripts": {
+    "dev": "node server.js",
+    "build": "node -e \"console.log('api build placeholder')\"",
+    "lint": "node -e \"console.log('api lint placeholder')\""
+  }
+}
