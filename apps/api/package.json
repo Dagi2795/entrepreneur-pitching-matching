@@ -2,8 +2,12 @@
   "name": "api",
   "private": true,
   "scripts": {
-    "dev": "node server.js",
+    "dev": "node src/server.js",
     "build": "node -e \"console.log('api build placeholder')\"",
     "lint": "node -e \"console.log('api lint placeholder')\""
+  },
+  "dependencies": {
+    "@epm/db": "workspace:*",
+    "dotenv": "^16.6.1"
   }
 }
