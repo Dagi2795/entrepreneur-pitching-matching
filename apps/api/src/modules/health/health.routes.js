@@ -5,13 +5,13 @@ async function handleHealthRoutes(req, res) {
   if (req.method === "GET" && req.url === "/health") {
     try {
       await checkDbHealth();
-      sendJson(res, 200, {
+      sendJson(req, res, 200, {
         app: "api",
         status: "healthy",
         database: "connected",
       });
     } catch (error) {
-      sendJson(res, 503, {
+      sendJson(req, res, 503, {
         app: "api",
         status: "degraded",
         database: "disconnected",

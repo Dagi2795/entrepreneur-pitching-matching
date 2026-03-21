@@ -41,9 +41,16 @@ async function initDb() {
       email TEXT NOT NULL UNIQUE,
       role TEXT NOT NULL,
       password_hash TEXT NOT NULL,
+      bio TEXT,
+      contact_info TEXT,
+      photo_url TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
+
+  await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT;");
+  await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS contact_info TEXT;");
+  await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS photo_url TEXT;");
 
   await query(`
     CREATE TABLE IF NOT EXISTS sessions (

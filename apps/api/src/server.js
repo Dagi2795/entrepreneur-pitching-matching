@@ -6,7 +6,7 @@ require("dotenv").config({
 });
 
 const { initDb } = require("@epm/db");
-const { sendJson } = require("./common/http");
+const { sendJson, handlePreflight } = require("./common/http");
 const { handleHealthRoutes } = require("./modules/health/health.routes");
 const { handleAuthRoutes } = require("./modules/auth/auth.routes");
 
@@ -14,6 +14,10 @@ const port = process.env.PORT || 4000;
 
 const server = http.createServer(async (req, res) => {
   try {
+    if (handlePreflight(req, res)) {
+      return;
+    }
+
     if (await handleHealthRoutes(req, res)) {
       return;
     }
@@ -22,10 +26,10 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    sendJson(res, 404, { error: "route not found" });
+    sendJson(req, res, 404, { error: "route not found" });
   } catch (error) {
     const statusCode = error.statusCode || 500;
-    sendJson(res, statusCode, {
+    sendJson(req, res, statusCode, {
       error: error.message || "internal server error",
     });
   }

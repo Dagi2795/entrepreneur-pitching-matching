@@ -1,0 +1,170 @@
+:root {
+  --bg: #f5f8ff;
+  --bg-2: #ebf1ff;
+  --card: #ffffff;
+  --text: #172238;
+  --muted: #5d6a7f;
+  --line: #d9e3f3;
+  --accent: #1a56db;
+  --accent-2: #2f7cf6;
+  --danger: #c62828;
+  --ok: #1e8e3e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text);
+  background: radial-gradient(circle at 10% -10%, #dfe8ff 0, transparent 40%),
+    linear-gradient(180deg, var(--bg-2), var(--bg));
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.topbar {
+  max-width: 1050px;
+  margin: 0 auto;
+  padding: 26px 16px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.topbar h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.topbar p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.topnav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: #1f2a3d;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+.nav-link.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.page-wrap {
+  max-width: 1050px;
+  margin: 0 auto;
+  padding: 10px 16px 40px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 8px 20px rgba(18, 45, 96, 0.06);
+}
+
+.card h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+}
+
+.form-grid {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+
+input,
+textarea,
+select,
+button {
+  font: inherit;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  border: 1px solid #bcc8d9;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fff;
+}
+
+input:disabled {
+  background: #f4f7fd;
+  color: #4e5a70;
+}
+
+textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+button {
+  border: 0;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #fff;
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  background: #2d3a54;
+  margin-top: 8px;
+}
+
+.subtle {
+  color: var(--muted);
+  margin: 0;
+}
+
+.ok-text {
+  color: var(--ok);
+  margin: 12px 0 0;
+}
+
+.error-text {
+  color: var(--danger);
+  margin: 12px 0 0;
+}
+
+@media (max-width: 780px) {
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

@@ -134,8 +134,95 @@ async function logoutUser(req) {
   }
 }
 
+async function getSessionUser(req) {
+  const token = getBearerToken(req);
+
+  if (!token) {
+    throw createHttpError(401, "missing bearer token");
+  }
+
+  const userResult = await query(
+    `
+      SELECT u.id, u.name, u.email, u.role, u.bio, u.contact_info, u.photo_url
+      FROM sessions s
+      JOIN users u ON u.id = s.user_id
+      WHERE s.token = $1 AND s.revoked_at IS NULL
+      LIMIT 1
+    `,
+    [token]
+  );
+
+  if (userResult.rowCount === 0) {
+    throw createHttpError(401, "invalid session token");
+  }
+
+  return userResult.rows[0];
+}
+
+async function getMyProfile(req) {
+  const user = await getSessionUser(req);
+
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    bio: user.bio,
+    contactInfo: user.contact_info,
+    photoUrl: user.photo_url,
+  };
+}
+
+async function updateMyProfile(req, payload) {
+  const currentUser = await getSessionUser(req);
+  const updates = payload || {};
+
+  const nextName =
+    updates.name === undefined ? currentUser.name : String(updates.name).trim();
+  const nextBio =
+    updates.bio === undefined || updates.bio === null
+      ? null
+      : String(updates.bio).trim();
+  const nextContactInfo =
+    updates.contactInfo === undefined || updates.contactInfo === null
+      ? null
+      : String(updates.contactInfo).trim();
+  const nextPhotoUrl =
+    updates.photoUrl === undefined || updates.photoUrl === null
+      ? null
+      : String(updates.photoUrl).trim();
+
+  if (!nextName) {
+    throw createHttpError(400, "name cannot be empty");
+  }
+
+  const updatedResult = await query(
+    `
+      UPDATE users
+      SET name = $1, bio = $2, contact_info = $3, photo_url = $4
+      WHERE id = $5
+      RETURNING id, name, email, role, bio, contact_info, photo_url
+    `,
+    [nextName, nextBio, nextContactInfo, nextPhotoUrl, currentUser.id]
+  );
+
+  const user = updatedResult.rows[0];
+
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    bio: user.bio,
+    contactInfo: user.contact_info,
+    photoUrl: user.photo_url,
+  };
+}
+
 module.exports = {
   registerUser,
   loginUser,
   logoutUser,
+  getMyProfile,
+  updateMyProfile,
 };
