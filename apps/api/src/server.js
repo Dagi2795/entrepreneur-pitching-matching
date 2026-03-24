@@ -9,6 +9,7 @@ const { initDb } = require("@epm/db");
 const { sendJson, handlePreflight } = require("./common/http");
 const { handleHealthRoutes } = require("./modules/health/health.routes");
 const { handleAuthRoutes } = require("./modules/auth/auth.routes");
+const { handlePitchRoutes } = require("./modules/pitch/pitch.routes");
 
 const port = process.env.PORT || 4000;
 
@@ -23,6 +24,10 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (await handleAuthRoutes(req, res)) {
+      return;
+    }
+
+    if (await handlePitchRoutes(req, res)) {
       return;
     }
 

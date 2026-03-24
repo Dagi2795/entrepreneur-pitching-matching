@@ -60,6 +60,21 @@ async function initDb() {
       revoked_at TIMESTAMPTZ
     );
   `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS pitches (
+      id UUID PRIMARY KEY,
+      entrepreneur_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      startup_name TEXT NOT NULL,
+      business_overview TEXT NOT NULL,
+      problem_solution TEXT NOT NULL,
+      market_opportunity TEXT NOT NULL,
+      funding_request NUMERIC(14,2) NOT NULL,
+      supporting_media JSONB NOT NULL DEFAULT '[]'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
 }
 
 async function checkDbHealth() {
