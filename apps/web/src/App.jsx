@@ -2,6 +2,10 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout";
 import { isAuthenticated } from "./lib/auth";
 import LogoutPage from "./pages/LogoutPage";
+import PitchBrowsePage from "./pages/PitchBrowsePage";
+import PitchEditPage from "./pages/PitchEditPage";
+import PitchMyPage from "./pages/PitchMyPage";
+import PitchNewPage from "./pages/PitchNewPage";
 import ProfilePage from "./pages/ProfilePage";
 import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
@@ -57,6 +61,38 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <LogoutPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pitches/new"
+            element={
+              <ProtectedRoute>
+                <PitchNewPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pitches/my"
+            element={
+              <ProtectedRoute>
+                <PitchMyPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pitches/:id/edit"
+            element={
+              <ProtectedRoute>
+                <PitchEditPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pitches/browse"
+            element={
+              <ProtectedRoute>
+                <PitchBrowsePage />
               </ProtectedRoute>
             }
           />
