@@ -170,6 +170,18 @@ button:disabled {
   flex-wrap: wrap;
 }
 
+.filters-row {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.match-score {
+  margin: 8px 0 0;
+  font-weight: 700;
+  color: #153f9f;
+}
+
 .list-grid {
   display: grid;
   gap: 10px;
@@ -225,5 +237,10 @@ button:disabled {
 @media (min-width: 960px) {
   .browse-layout {
     grid-template-columns: 1fr 1.2fr;
+  }
+
+  .filters-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: end;
   }
 }

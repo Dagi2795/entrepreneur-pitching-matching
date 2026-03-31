@@ -9,6 +9,7 @@ import PitchNewPage from "./pages/PitchNewPage";
 import ProfilePage from "./pages/ProfilePage";
 import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
+import MatchesPage from "./pages/MatchesPage";
 
 function ProtectedRoute({ children }) {
   if (!isAuthenticated()) {
@@ -93,6 +94,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <PitchBrowsePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/matches"
+            element={
+              <ProtectedRoute>
+                <MatchesPage />
               </ProtectedRoute>
             }
           />
