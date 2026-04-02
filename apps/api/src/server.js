@@ -53,6 +53,16 @@ const server = http.createServer(async (req, res) => {
 async function startServer() {
   await initDb();
 
+  server.on("error", (error) => {
+    if (error.code === "EADDRINUSE") {
+      console.error(`port ${port} is already in use`);
+      process.exit(1);
+    }
+
+    console.error("server error", error.message);
+    process.exit(1);
+  });
+
   server.listen(port, () => {
     console.log(`api running on http://localhost:${port}`);
   });
