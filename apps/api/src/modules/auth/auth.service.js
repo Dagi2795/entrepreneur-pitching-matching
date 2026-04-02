@@ -223,6 +223,7 @@ module.exports = {
   registerUser,
   loginUser,
   logoutUser,
+  getSessionUser,
   getMyProfile,
   updateMyProfile,
 };

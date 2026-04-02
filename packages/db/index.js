@@ -75,6 +75,48 @@ async function initDb() {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS conversations (
+      id UUID PRIMARY KEY,
+      created_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      participants_key TEXT NOT NULL UNIQUE,
+      participant_count INTEGER NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      last_message_at TIMESTAMPTZ
+    );
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS conversation_participants (
+      conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (conversation_id, user_id)
+    );
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS messages (
+      id UUID PRIMARY KEY,
+      conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+      sender_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      body TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      read_at TIMESTAMPTZ
+    );
+  `);
+
+  await query(
+    "CREATE INDEX IF NOT EXISTS idx_conversations_last_message_at ON conversations (last_message_at DESC NULLS LAST, created_at DESC);"
+  );
+  await query(
+    "CREATE INDEX IF NOT EXISTS idx_conversation_participants_user_id ON conversation_participants (user_id);"
+  );
+  await query(
+    "CREATE INDEX IF NOT EXISTS idx_messages_conversation_created_at ON messages (conversation_id, created_at DESC);"
+  );
 }
 
 async function checkDbHealth() {
