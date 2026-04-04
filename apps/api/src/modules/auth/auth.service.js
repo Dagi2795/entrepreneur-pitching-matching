@@ -46,7 +46,6 @@ async function registerUser(payload) {
     role,
     passwordHash,
   };
-
   await query(
     "INSERT INTO users (id, name, email, role, password_hash) VALUES ($1, $2, $3, $4, $5)",
     [user.id, user.name, user.email, user.role, user.passwordHash]
@@ -143,7 +142,7 @@ async function getSessionUser(req) {
 
   const userResult = await query(
     `
-      SELECT u.id, u.name, u.email, u.role, u.bio, u.contact_info, u.photo_url
+      SELECT u.id, u.name, u.email, u.role, u.bio, u.interests, u.contact_info, u.photo_url
       FROM sessions s
       JOIN users u ON u.id = s.user_id
       WHERE s.token = $1 AND s.revoked_at IS NULL
@@ -168,6 +167,7 @@ async function getMyProfile(req) {
     email: user.email,
     role: user.role,
     bio: user.bio,
+    interests: user.interests,
     contactInfo: user.contact_info,
     photoUrl: user.photo_url,
   };
@@ -183,6 +183,10 @@ async function updateMyProfile(req, payload) {
     updates.bio === undefined || updates.bio === null
       ? null
       : String(updates.bio).trim();
+  const nextInterests =
+    updates.interests === undefined || updates.interests === null
+      ? null
+      : String(updates.interests).trim();
   const nextContactInfo =
     updates.contactInfo === undefined || updates.contactInfo === null
       ? null
@@ -199,11 +203,11 @@ async function updateMyProfile(req, payload) {
   const updatedResult = await query(
     `
       UPDATE users
-      SET name = $1, bio = $2, contact_info = $3, photo_url = $4
-      WHERE id = $5
-      RETURNING id, name, email, role, bio, contact_info, photo_url
+      SET name = $1, bio = $2, interests = $3, contact_info = $4, photo_url = $5
+      WHERE id = $6
+      RETURNING id, name, email, role, bio, interests, contact_info, photo_url
     `,
-    [nextName, nextBio, nextContactInfo, nextPhotoUrl, currentUser.id]
+    [nextName, nextBio, nextInterests, nextContactInfo, nextPhotoUrl, currentUser.id]
   );
 
   const user = updatedResult.rows[0];
@@ -214,6 +218,7 @@ async function updateMyProfile(req, payload) {
     email: user.email,
     role: user.role,
     bio: user.bio,
+    interests: user.interests,
     contactInfo: user.contact_info,
     photoUrl: user.photo_url,
   };

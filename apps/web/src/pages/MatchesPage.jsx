@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
+import { apiRequest } from "../lib/api";
 import { fetchRecommendations } from "../lib/matching";
+import { openPitchConversation } from "../lib/messages";
 
 const initialFilters = {
   minFunding: "",
@@ -8,8 +11,11 @@ const initialFilters = {
 };
 
 export default function MatchesPage() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState(initialFilters);
   const [loading, setLoading] = useState(true);
+  const [loadingRole, setLoadingRole] = useState(true);
+  const [role, setRole] = useState("");
   const [error, setError] = useState("");
   const [recommendations, setRecommendations] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -33,7 +39,30 @@ export default function MatchesPage() {
   }
 
   useEffect(() => {
-    loadRecommendations(initialFilters);
+    async function loadPage() {
+      setLoadingRole(true);
+      setLoading(true);
+      setError("");
+
+      try {
+        const data = await apiRequest("/auth/me", { method: "GET" });
+        const userRole = data.profile?.role || "";
+        setRole(userRole);
+
+        if (userRole === "investor" || userRole === "admin") {
+          await loadRecommendations(initialFilters);
+        } else {
+          setLoading(false);
+        }
+      } catch (loadError) {
+        setError(loadError.message);
+        setLoading(false);
+      } finally {
+        setLoadingRole(false);
+      }
+    }
+
+    loadPage();
   }, []);
 
   function handleFilterChange(event) {
@@ -51,11 +80,24 @@ export default function MatchesPage() {
     await loadRecommendations(initialFilters);
   }
 
+  async function contactEntrepreneur(pitch) {
+    try {
+      const result = await openPitchConversation(pitch.id);
+      navigate(`/messages/${result.conversation.id}`);
+    } catch (contactError) {
+      setError(contactError.message);
+    }
+  }
+
+  if (!loadingRole && role && role !== "investor" && role !== "admin") {
+    return <Navigate to="/pitches/my" replace />;
+  }
+
   return (
     <section className="card">
       <h2>Matching Recommendations</h2>
       <p className="subtle">
-        Set your investor preferences to rank startup pitches by matching score.
+        Set your investor preferences. Saved interests and prior message history also shape the ranking.
       </p>
 
       <form className="filters-row" onSubmit={handleApply}>
@@ -120,17 +162,20 @@ export default function MatchesPage() {
       <div className="browse-layout">
         <div className="list-grid">
           {recommendations.map((item) => (
-            <button
+            <article
               key={item.id}
-              type="button"
               className={selected?.id === item.id ? "list-card selected" : "list-card"}
-              onClick={() => setSelected(item)}
             >
-              <h3>{item.startupName}</h3>
-              <p className="subtle">Founder: {item.entrepreneurName || "Unknown"}</p>
-              <p className="subtle">Funding: ${item.fundingRequest}</p>
-              <p className="match-score">Score: {item.matchingScore}</p>
-            </button>
+              <button type="button" className="card-select-trigger" onClick={() => setSelected(item)}>
+                <h3>{item.startupName}</h3>
+                <p className="subtle">Founder: {item.entrepreneurName || "Unknown"}</p>
+                <p className="subtle">Funding: ${item.fundingRequest}</p>
+                <p className="match-score">Score: {item.matchingScore}</p>
+              </button>
+              <button type="button" onClick={() => contactEntrepreneur(item)}>
+                Message Entrepreneur
+              </button>
+            </article>
           ))}
         </div>
 
@@ -165,6 +210,9 @@ export default function MatchesPage() {
                   <li key={reason}>{reason}</li>
                 ))}
               </ul>
+              <button type="button" onClick={() => contactEntrepreneur(selected)}>
+                Message Entrepreneur
+              </button>
             </>
           )}
         </article>

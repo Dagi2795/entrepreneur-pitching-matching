@@ -111,6 +111,48 @@ function calculateKeywordScore(textBlob, keywords, reasons) {
   return Math.min(30, matches * 10);
 }
 
+function calculateInterestScore(textBlob, interests, reasons) {
+  if (interests.length === 0) {
+    reasons.push("No saved interests available in your profile");
+    return 0;
+  }
+
+  let matches = 0;
+  for (const interest of interests) {
+    if (textBlob.includes(interest)) {
+      matches += 1;
+    }
+  }
+
+  if (matches === 0) {
+    reasons.push("No saved interest overlap found");
+    return 0;
+  }
+
+  reasons.push(`${matches} saved interest(s) matched`);
+  return Math.min(40, matches * 12);
+}
+
+function calculateHistoryScore(historyRow, reasons) {
+  if (!historyRow || Number(historyRow.message_count) === 0) {
+    reasons.push("No prior message history with this entrepreneur");
+    return 0;
+  }
+
+  const messageCount = Number(historyRow.message_count);
+  const lastContactAt = historyRow.last_contact_at ? new Date(historyRow.last_contact_at).getTime() : 0;
+  const ageDays = lastContactAt ? (Date.now() - lastContactAt) / (1000 * 60 * 60 * 24) : 999;
+  const recencyBoost = ageDays <= 30 ? 8 : ageDays <= 90 ? 4 : 0;
+  const score = Math.min(25, messageCount * 4 + recencyBoost);
+
+  reasons.push(`Previous conversation history with this entrepreneur (${messageCount} message(s))`);
+  if (recencyBoost > 0) {
+    reasons.push("Recent contact history increased the ranking");
+  }
+
+  return score;
+}
+
 function calculateRecencyScore(createdAt) {
   const ageMs = Date.now() - new Date(createdAt).getTime();
   const ageDays = ageMs / (1000 * 60 * 60 * 24);
@@ -149,7 +191,31 @@ async function getRecommendations(req, filters) {
     throw createHttpError(400, "minFunding cannot be greater than maxFunding");
   }
 
-  const keywords = parseKeywords(filters.keywords);
+  const profileResult = await query(
+    "SELECT interests FROM users WHERE id = $1 LIMIT 1",
+    [user.id]
+  );
+  const savedInterests = parseKeywords(profileResult.rows[0]?.interests || user.interests || "");
+  const filterKeywords = parseKeywords(filters.keywords);
+  const historyResult = await query(
+    `
+      SELECT cp_other.user_id AS entrepreneur_id,
+             COUNT(m.id) AS message_count,
+             MAX(m.created_at) AS last_contact_at
+      FROM conversations c
+      JOIN conversation_participants me
+        ON me.conversation_id = c.id AND me.user_id = $1
+      JOIN conversation_participants cp_other
+        ON cp_other.conversation_id = c.id AND cp_other.user_id <> $1
+      LEFT JOIN messages m ON m.conversation_id = c.id
+      GROUP BY cp_other.user_id
+    `,
+    [user.id]
+  );
+
+  const historyMap = new Map(
+    historyResult.rows.map((row) => [row.entrepreneur_id, row])
+  );
 
   const pitchesResult = await query(
     `
@@ -167,6 +233,7 @@ async function getRecommendations(req, filters) {
     .map((row) => {
       const reasons = [];
       const textBlob = `${row.startup_name} ${row.business_overview} ${row.problem_solution} ${row.market_opportunity}`.toLowerCase();
+      const historyRow = historyMap.get(row.entrepreneur_id);
 
       const fundingScore = calculateFundingScore(
         Number(row.funding_request),
@@ -174,10 +241,12 @@ async function getRecommendations(req, filters) {
         maxFunding,
         reasons
       );
-      const keywordScore = calculateKeywordScore(textBlob, keywords, reasons);
+      const interestScore = calculateInterestScore(textBlob, savedInterests, reasons);
+      const keywordScore = calculateKeywordScore(textBlob, filterKeywords, reasons);
+      const historyScore = calculateHistoryScore(historyRow, reasons);
       const recencyScore = calculateRecencyScore(row.created_at);
 
-      const totalScore = fundingScore + keywordScore + recencyScore;
+      const totalScore = fundingScore + interestScore + keywordScore + historyScore + recencyScore;
       return mapPitch(row, totalScore, reasons);
     })
     .sort((a, b) => b.matchingScore - a.matchingScore);
@@ -186,7 +255,8 @@ async function getRecommendations(req, filters) {
     filters: {
       minFunding,
       maxFunding,
-      keywords,
+      keywords: filterKeywords,
+      interests: savedInterests,
     },
     recommendations,
   };

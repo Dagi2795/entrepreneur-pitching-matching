@@ -48,6 +48,12 @@ function ensureEntrepreneur(user) {
   }
 }
 
+function ensureInvestorOrAdmin(user) {
+  if (user.role !== "investor" && user.role !== "admin") {
+    throw createHttpError(403, "only investors or admins can browse all pitches");
+  }
+}
+
 function mapPitchRow(row) {
   return {
     id: row.id,
@@ -158,7 +164,8 @@ async function listMyPitches(req) {
 }
 
 async function listAllPitches(req) {
-  await getSessionUser(req);
+  const user = await getSessionUser(req);
+  ensureInvestorOrAdmin(user);
 
   const result = await query(
     `
@@ -176,7 +183,7 @@ async function listAllPitches(req) {
 }
 
 async function getPitchById(req, pitchId) {
-  await getSessionUser(req);
+  const user = await getSessionUser(req);
 
   const result = await query(
     `
@@ -194,6 +201,10 @@ async function getPitchById(req, pitchId) {
 
   if (result.rowCount === 0) {
     throw createHttpError(404, "pitch not found");
+  }
+
+  if (user.role === "entrepreneur" && result.rows[0].entrepreneur_id !== user.id) {
+    throw createHttpError(403, "you can only view your own pitches");
   }
 
   return mapPitchRow(result.rows[0]);

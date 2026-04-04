@@ -9,6 +9,7 @@ export default function ProfilePage() {
   const [form, setForm] = useState({
     name: "",
     bio: "",
+    interests: "",
     contactInfo: "",
     photoUrl: "",
     email: "",
@@ -25,6 +26,7 @@ export default function ProfilePage() {
       setForm({
         name: profile.name || "",
         bio: profile.bio || "",
+          interests: profile.interests || "",
         contactInfo: profile.contactInfo || "",
         photoUrl: profile.photoUrl || "",
         email: profile.email || "",
@@ -51,6 +53,7 @@ export default function ProfilePage() {
       const payload = {
         name: form.name,
         bio: form.bio,
+        interests: form.interests,
         contactInfo: form.contactInfo,
         photoUrl: form.photoUrl,
       };
@@ -101,6 +104,15 @@ export default function ProfilePage() {
             value={form.bio}
             onChange={(e) => setForm({ ...form, bio: e.target.value })}
             placeholder="Tell people about yourself"
+          />
+        </label>
+
+        <label>
+          Interests
+          <textarea
+            value={form.interests}
+            onChange={(e) => setForm({ ...form, interests: e.target.value })}
+            placeholder="ai, fintech, healthcare, saas"
           />
         </label>
 

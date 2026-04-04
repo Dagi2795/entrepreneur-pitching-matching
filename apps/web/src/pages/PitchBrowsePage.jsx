@@ -1,17 +1,30 @@
 import { useEffect, useState } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
 import { apiRequest } from "../lib/api";
+import { openPitchConversation } from "../lib/messages";
 
 export default function PitchBrowsePage() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [pitches, setPitches] = useState([]);
   const [selected, setSelected] = useState(null);
+  const [role, setRole] = useState("");
 
   async function loadPitches() {
     setLoading(true);
     setError("");
 
     try {
+      const me = await apiRequest("/auth/me", { method: "GET" });
+      const userRole = me.profile?.role || "";
+      setRole(userRole);
+
+      if (userRole !== "investor" && userRole !== "admin") {
+        setLoading(false);
+        return;
+      }
+
       const data = await apiRequest("/pitches", { method: "GET" });
       setPitches(data.pitches || []);
       if (data.pitches?.length) {
@@ -27,6 +40,19 @@ export default function PitchBrowsePage() {
   useEffect(() => {
     loadPitches();
   }, []);
+
+  async function contactEntrepreneur(pitch) {
+    try {
+      const result = await openPitchConversation(pitch.id);
+      navigate(`/messages/${result.conversation.id}`);
+    } catch (contactError) {
+      setError(contactError.message);
+    }
+  }
+
+  if (!loading && role && role !== "investor" && role !== "admin") {
+    return <Navigate to="/pitches/my" replace />;
+  }
 
   return (
     <section className="card">
@@ -45,16 +71,19 @@ export default function PitchBrowsePage() {
       <div className="browse-layout">
         <div className="list-grid">
           {pitches.map((pitch) => (
-            <button
+            <article
               key={pitch.id}
-              type="button"
               className={selected?.id === pitch.id ? "list-card selected" : "list-card"}
-              onClick={() => setSelected(pitch)}
             >
-              <h3>{pitch.startupName}</h3>
-              <p className="subtle">Founder: {pitch.entrepreneurName || "Unknown"}</p>
-              <p className="subtle">Funding: ${pitch.fundingRequest}</p>
-            </button>
+              <button type="button" className="card-select-trigger" onClick={() => setSelected(pitch)}>
+                <h3>{pitch.startupName}</h3>
+                <p className="subtle">Founder: {pitch.entrepreneurName || "Unknown"}</p>
+                <p className="subtle">Funding: ${pitch.fundingRequest}</p>
+              </button>
+              <button type="button" onClick={() => contactEntrepreneur(pitch)}>
+                Message Entrepreneur
+              </button>
+            </article>
           ))}
         </div>
 

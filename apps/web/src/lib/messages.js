@@ -15,6 +15,12 @@ export async function createConversation(participantIds) {
   });
 }
 
+export async function openPitchConversation(pitchId) {
+  return apiRequest(`/messages/conversations/from-pitch/${pitchId}`, {
+    method: "POST",
+  });
+}
+
 export async function listConversationMessages(conversationId) {
   return apiRequest(`/messages/conversations/${conversationId}/messages`, {
     method: "GET",

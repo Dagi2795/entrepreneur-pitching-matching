@@ -75,96 +75,13 @@ function validateBody(payload) {
   return body;
 }
 
-async function ensureConversationAccess(conversationId, userId) {
-  const result = await query(
-    `
-      SELECT c.id
-      FROM conversations c
-      JOIN conversation_participants cp ON cp.conversation_id = c.id
-      WHERE c.id = $1 AND cp.user_id = $2
-      LIMIT 1
-    `,
-    [conversationId, userId]
-  );
-
-  if (result.rowCount === 0) {
-    throw createHttpError(404, "conversation not found");
+function ensureInvestorOrAdmin(user) {
+  if (user.role !== "investor" && user.role !== "admin") {
+    throw createHttpError(403, "only investors or admins can start pitch conversations");
   }
 }
 
-async function listConversations(req) {
-  const user = await getSessionUser(req);
-
-  const result = await query(
-    `
-      SELECT
-        c.id,
-        c.created_by,
-        c.participants_key,
-        c.participant_count,
-        c.created_at,
-        c.updated_at,
-        c.last_message_at,
-        lm.id AS last_message_id,
-        lm.sender_id AS last_message_sender_id,
-        lm.body AS last_message_body,
-        lm.created_at AS last_message_created_at,
-        sender.name AS last_message_sender_name,
-        participants.participants
-      FROM conversations c
-      JOIN conversation_participants me
-        ON me.conversation_id = c.id AND me.user_id = $1
-      LEFT JOIN LATERAL (
-        SELECT
-          m.id,
-          m.sender_id,
-          m.body,
-          m.created_at
-        FROM messages m
-        WHERE m.conversation_id = c.id
-        ORDER BY m.created_at DESC
-        LIMIT 1
-      ) lm ON true
-      LEFT JOIN users sender ON sender.id = lm.sender_id
-      LEFT JOIN LATERAL (
-        SELECT json_agg(
-          json_build_object(
-            'id', u.id,
-            'name', u.name,
-            'email', u.email,
-            'role', u.role
-          )
-          ORDER BY u.name
-        ) AS participants
-        FROM conversation_participants cp
-        JOIN users u ON u.id = cp.user_id
-        WHERE cp.conversation_id = c.id
-      ) participants ON true
-      ORDER BY COALESCE(c.last_message_at, c.created_at) DESC
-    `,
-    [user.id]
-  );
-
-  return result.rows.map(mapConversationRow);
-}
-
-async function createConversation(req, payload) {
-  const user = await getSessionUser(req);
-  const participantIds = normalizeUuidList(payload);
-
-  if (participantIds.length === 0) {
-    throw createHttpError(400, "participantId or participantIds is required");
-  }
-
-  const invalidParticipantId = participantIds.find((value) => !isUuidLike(value));
-  if (invalidParticipantId) {
-    throw createHttpError(400, "participantIds must contain valid UUID values");
-  }
-
-  if (participantIds.includes(user.id) && participantIds.length === 1) {
-    throw createHttpError(400, "conversation must include at least one other participant");
-  }
-
+async function createOrReuseConversation(user, participantIds) {
   const mergedParticipantIds = [...new Set([user.id, ...participantIds])];
 
   if (mergedParticipantIds.length < 2) {
@@ -276,6 +193,130 @@ async function createConversation(req, payload) {
     created,
     conversation: mapConversationRow(conversationResult.rows[0]),
   };
+}
+
+async function createConversationFromPitch(req, pitchId) {
+  const user = await getSessionUser(req);
+  ensureInvestorOrAdmin(user);
+
+  const pitchResult = await query(
+    `
+      SELECT id, entrepreneur_id
+      FROM pitches
+      WHERE id = $1
+      LIMIT 1
+    `,
+    [pitchId]
+  );
+
+  if (pitchResult.rowCount === 0) {
+    throw createHttpError(404, "pitch not found");
+  }
+
+  const pitch = pitchResult.rows[0];
+  if (pitch.entrepreneur_id === user.id) {
+    throw createHttpError(400, "cannot start a conversation with yourself");
+  }
+
+  return createOrReuseConversation(user, [pitch.entrepreneur_id]);
+}
+
+async function ensureConversationAccess(conversationId, userId) {
+  const result = await query(
+    `
+      SELECT c.id
+      FROM conversations c
+      JOIN conversation_participants cp ON cp.conversation_id = c.id
+      WHERE c.id = $1 AND cp.user_id = $2
+      LIMIT 1
+    `,
+    [conversationId, userId]
+  );
+
+  if (result.rowCount === 0) {
+    throw createHttpError(404, "conversation not found");
+  }
+}
+
+async function listConversations(req) {
+  const user = await getSessionUser(req);
+
+  const result = await query(
+    `
+      SELECT
+        c.id,
+        c.created_by,
+        c.participants_key,
+        c.participant_count,
+        c.created_at,
+        c.updated_at,
+        c.last_message_at,
+        lm.id AS last_message_id,
+        lm.sender_id AS last_message_sender_id,
+        lm.body AS last_message_body,
+        lm.created_at AS last_message_created_at,
+        sender.name AS last_message_sender_name,
+        participants.participants
+      FROM conversations c
+      JOIN conversation_participants me
+        ON me.conversation_id = c.id AND me.user_id = $1
+      LEFT JOIN LATERAL (
+        SELECT
+          m.id,
+          m.sender_id,
+          m.body,
+          m.created_at
+        FROM messages m
+        WHERE m.conversation_id = c.id
+        ORDER BY m.created_at DESC
+        LIMIT 1
+      ) lm ON true
+      LEFT JOIN users sender ON sender.id = lm.sender_id
+      LEFT JOIN LATERAL (
+        SELECT json_agg(
+          json_build_object(
+            'id', u.id,
+            'name', u.name,
+            'email', u.email,
+            'role', u.role
+          )
+          ORDER BY u.name
+        ) AS participants
+        FROM conversation_participants cp
+        JOIN users u ON u.id = cp.user_id
+        WHERE cp.conversation_id = c.id
+      ) participants ON true
+      ORDER BY COALESCE(c.last_message_at, c.created_at) DESC
+    `,
+    [user.id]
+  );
+
+  return result.rows.map(mapConversationRow);
+}
+
+async function createConversation(req, payload) {
+  const user = await getSessionUser(req);
+  const participantIds = normalizeUuidList(payload);
+
+  if (participantIds.length === 0) {
+    throw createHttpError(400, "participantId or participantIds is required");
+  }
+
+  const invalidParticipantId = participantIds.find((value) => !isUuidLike(value));
+  if (invalidParticipantId) {
+    throw createHttpError(400, "participantIds must contain valid UUID values");
+  }
+
+  if (participantIds.includes(user.id) && participantIds.length === 1) {
+    throw createHttpError(400, "conversation must include at least one other participant");
+  }
+
+  const mergedParticipantIds = [...new Set([user.id, ...participantIds])];
+
+  if (mergedParticipantIds.length < 2) {
+    throw createHttpError(400, "conversation must include at least one other participant");
+  }
+  return createOrReuseConversation(user, mergedParticipantIds);
 }
 
 async function listConversationMessages(req, conversationId) {
@@ -390,6 +431,7 @@ async function sendMessage(req, conversationId, payload) {
 module.exports = {
   listConversations,
   createConversation,
+  createConversationFromPitch,
   listConversationMessages,
   sendMessage,
 };

@@ -291,6 +291,22 @@ button:disabled {
   color: #24314a;
 }
 
+.card-select-trigger {
+  width: 100%;
+  display: grid;
+  gap: 6px;
+  text-align: left;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.card-select-trigger h3 {
+  margin: 0;
+}
+
 .thread-panel {
   display: grid;
   gap: 14px;

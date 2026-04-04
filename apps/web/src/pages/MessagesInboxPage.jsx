@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { apiRequest } from "../lib/api";
-import { createConversation, listConversations } from "../lib/messages";
+import { listConversations } from "../lib/messages";
 
 function formatTime(value) {
   if (!value) {
@@ -24,14 +24,10 @@ function buildPartnerLabel(conversation, currentUserId) {
 }
 
 export default function MessagesInboxPage() {
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [status, setStatus] = useState("");
   const [conversations, setConversations] = useState([]);
   const [profile, setProfile] = useState(null);
-  const [participantInput, setParticipantInput] = useState("");
 
   async function loadInbox() {
     setLoading(true);
@@ -55,29 +51,6 @@ export default function MessagesInboxPage() {
     loadInbox();
   }, []);
 
-  async function handleStartConversation(event) {
-    event.preventDefault();
-    setSaving(true);
-    setStatus("");
-    setError("");
-
-    try {
-      const participantIds = participantInput
-        .split(",")
-        .map((value) => value.trim())
-        .filter(Boolean);
-
-      const result = await createConversation(participantIds);
-      setStatus(result.created ? "Conversation started." : "Conversation opened.");
-      setParticipantInput("");
-      navigate(`/messages/${result.conversation.id}`);
-    } catch (saveError) {
-      setError(saveError.message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
   return (
     <section className="card">
       <div className="section-heading">
@@ -94,21 +67,8 @@ export default function MessagesInboxPage() {
         )}
       </div>
 
-      <form className="message-start-form" onSubmit={handleStartConversation}>
-        <label>
-          Participant ID(s)
-          <input
-            value={participantInput}
-            onChange={(event) => setParticipantInput(event.target.value)}
-            placeholder="Paste one or more user IDs, separated by commas"
-          />
-        </label>
-        <button type="submit" disabled={saving}>
-          {saving ? "Starting..." : "Start Conversation"}
-        </button>
-      </form>
       <p className="subtle message-helper">
-        You can copy another user’s ID from their profile or from your course test data.
+        Open any pitch or match card to contact the entrepreneur directly.
       </p>
 
       <div className="actions-row">
@@ -120,7 +80,6 @@ export default function MessagesInboxPage() {
         </Link>
       </div>
 
-      {status && <p className="ok-text">{status}</p>}
       {error && <p className="error-text">{error}</p>}
       {loading && <p className="subtle">Loading conversations...</p>}
 

@@ -1,6 +1,7 @@
 const {
   listConversationsController,
   createConversationController,
+  createConversationFromPitchController,
   listConversationMessagesController,
   sendMessageController,
 } = require("./message.controller");
@@ -16,6 +17,15 @@ async function handleMessageRoutes(req, res) {
 
   if (req.method === "POST" && pathname === "/messages/conversations") {
     await createConversationController(req, res);
+    return true;
+  }
+
+  const pitchConversationMatch = pathname.match(
+    /^\/messages\/conversations\/from-pitch\/([0-9a-fA-F-]{36})$/
+  );
+
+  if (pitchConversationMatch && req.method === "POST") {
+    await createConversationFromPitchController(req, res, pitchConversationMatch[1]);
     return true;
   }
 
