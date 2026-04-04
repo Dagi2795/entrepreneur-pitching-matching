@@ -64,6 +64,7 @@ function readJsonBody(req) {
 }
 
 module.exports = {
+  setCorsHeaders,
   sendJson,
   readJsonBody,
   handlePreflight,

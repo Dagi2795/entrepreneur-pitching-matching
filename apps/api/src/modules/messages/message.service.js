@@ -1,6 +1,9 @@
 const crypto = require("crypto");
 const { query } = require("@epm/db");
 const { getSessionUser } = require("../auth/auth.service");
+const { setCorsHeaders } = require("../../common/http");
+
+const conversationSubscribers = new Map();
 
 function createHttpError(statusCode, message) {
   const error = new Error(message);
@@ -73,6 +76,123 @@ function validateBody(payload) {
   }
 
   return body;
+}
+
+function getConversationSubscriberSet(conversationId) {
+  if (!conversationSubscribers.has(conversationId)) {
+    conversationSubscribers.set(conversationId, new Set());
+  }
+
+  return conversationSubscribers.get(conversationId);
+}
+
+function addConversationSubscriber(conversationId, subscriber) {
+  const set = getConversationSubscriberSet(conversationId);
+  set.add(subscriber);
+}
+
+function removeConversationSubscriber(conversationId, subscriber) {
+  const set = conversationSubscribers.get(conversationId);
+  if (!set) {
+    return;
+  }
+
+  set.delete(subscriber);
+  if (set.size === 0) {
+    conversationSubscribers.delete(conversationId);
+  }
+}
+
+function publishConversationMessage(message) {
+  const subscribers = conversationSubscribers.get(message.conversationId);
+  if (!subscribers || subscribers.size === 0) {
+    return;
+  }
+
+  const payload = JSON.stringify({ message });
+  for (const subscriber of subscribers) {
+    try {
+      subscriber.res.write(`event: conversation-message\n`);
+      subscriber.res.write(`data: ${payload}\n\n`);
+    } catch (error) {
+      removeConversationSubscriber(message.conversationId, subscriber);
+    }
+  }
+}
+
+async function getSessionUserFromToken(token) {
+  if (!token) {
+    throw createHttpError(401, "missing bearer token");
+  }
+
+  const userResult = await query(
+    `
+      SELECT u.id, u.name, u.email, u.role, u.bio, u.interests, u.contact_info, u.photo_url
+      FROM sessions s
+      JOIN users u ON u.id = s.user_id
+      WHERE s.token = $1 AND s.revoked_at IS NULL
+      LIMIT 1
+    `,
+    [token]
+  );
+
+  if (userResult.rowCount === 0) {
+    throw createHttpError(401, "invalid session token");
+  }
+
+  return userResult.rows[0];
+}
+
+function getBearerToken(req) {
+  const authHeader = req.headers.authorization || "";
+  const [scheme, token] = authHeader.split(" ");
+
+  if (scheme !== "Bearer" || !token) {
+    return null;
+  }
+
+  return token;
+}
+
+async function openConversationStream(req, res, conversationId, tokenFromQuery) {
+  const token = tokenFromQuery || getBearerToken(req);
+  const user = token ? await getSessionUserFromToken(token) : await getSessionUser(req);
+  await ensureConversationAccess(conversationId, user.id);
+
+  setCorsHeaders(req, res);
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
+  });
+
+  const subscriber = {
+    id: crypto.randomUUID(),
+    userId: user.id,
+    res,
+  };
+
+  addConversationSubscriber(conversationId, subscriber);
+
+  res.write("event: connected\n");
+  res.write(`data: ${JSON.stringify({ conversationId, subscriberId: subscriber.id })}\n\n`);
+
+  const keepAliveInterval = setInterval(() => {
+    try {
+      res.write(": keep-alive\n\n");
+    } catch (error) {
+      clearInterval(keepAliveInterval);
+      removeConversationSubscriber(conversationId, subscriber);
+    }
+  }, 25000);
+
+  const closeStream = () => {
+    clearInterval(keepAliveInterval);
+    removeConversationSubscriber(conversationId, subscriber);
+  };
+
+  req.on("close", closeStream);
+  req.on("error", closeStream);
 }
 
 function ensureInvestorOrAdmin(user) {
@@ -423,8 +543,11 @@ async function sendMessage(req, conversationId, payload) {
     [result.rows[0].id]
   );
 
+  const message = mapMessageRow(messageResult.rows[0]);
+  publishConversationMessage(message);
+
   return {
-    message: mapMessageRow(messageResult.rows[0]),
+    message,
   };
 }
 
@@ -434,4 +557,5 @@ module.exports = {
   createConversationFromPitch,
   listConversationMessages,
   sendMessage,
+  openConversationStream,
 };

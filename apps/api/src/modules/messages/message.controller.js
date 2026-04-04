@@ -5,6 +5,7 @@ const {
   createConversationFromPitch,
   listConversationMessages,
   sendMessage,
+  openConversationStream,
 } = require("./message.service");
 
 async function listConversationsController(req, res) {
@@ -34,10 +35,15 @@ async function sendMessageController(req, res, conversationId) {
   sendJson(req, res, 201, result);
 }
 
+async function streamConversationController(req, res, conversationId, tokenFromQuery) {
+  await openConversationStream(req, res, conversationId, tokenFromQuery);
+}
+
 module.exports = {
   listConversationsController,
   createConversationController,
   createConversationFromPitchController,
   listConversationMessagesController,
   sendMessageController,
+  streamConversationController,
 };

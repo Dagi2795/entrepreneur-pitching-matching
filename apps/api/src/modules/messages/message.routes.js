@@ -4,6 +4,7 @@ const {
   createConversationFromPitchController,
   listConversationMessagesController,
   sendMessageController,
+  streamConversationController,
 } = require("./message.controller");
 
 async function handleMessageRoutes(req, res) {
@@ -45,6 +46,16 @@ async function handleMessageRoutes(req, res) {
       await sendMessageController(req, res, conversationId);
       return true;
     }
+  }
+
+  const conversationStreamMatch = pathname.match(
+    /^\/messages\/conversations\/([0-9a-fA-F-]{36})\/stream$/
+  );
+
+  if (conversationStreamMatch && req.method === "GET") {
+    const token = url.searchParams.get("token");
+    await streamConversationController(req, res, conversationStreamMatch[1], token);
+    return true;
   }
 
   return false;

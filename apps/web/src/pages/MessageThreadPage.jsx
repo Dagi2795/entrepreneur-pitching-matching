@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { apiRequest } from "../lib/api";
-import { listConversationMessages, sendMessage } from "../lib/messages";
+import {
+  listConversationMessages,
+  sendMessage,
+  subscribeToConversation,
+} from "../lib/messages";
 
 function formatTime(value) {
   if (!value) {
@@ -21,6 +25,23 @@ export default function MessageThreadPage() {
   const [conversation, setConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [profile, setProfile] = useState(null);
+
+  function appendUniqueMessage(nextMessage) {
+    if (!nextMessage || !nextMessage.id) {
+      return;
+    }
+
+    setMessages((current) => {
+      const exists = current.some((message) => message.id === nextMessage.id);
+      if (exists) {
+        return current;
+      }
+
+      return [...current, nextMessage].sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+    });
+  }
 
   async function loadThread() {
     setLoading(true);
@@ -45,6 +66,21 @@ export default function MessageThreadPage() {
     loadThread();
   }, [id]);
 
+  useEffect(() => {
+    const unsubscribe = subscribeToConversation(id, {
+      onMessage: (message) => {
+        appendUniqueMessage(message);
+      },
+      onError: () => {
+        setError((current) => current || "Live updates temporarily unavailable.");
+      },
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [id]);
+
   const participantsLabel = useMemo(() => {
     if (!conversation?.participants?.length) {
       return "Conversation participants";
@@ -63,10 +99,9 @@ export default function MessageThreadPage() {
 
     try {
       const result = await sendMessage(id, messageBody);
-      setMessages((current) => [...current, result.message]);
+      appendUniqueMessage(result.message);
       setMessageBody("");
       setStatus("Message sent.");
-      await loadThread();
     } catch (sendError) {
       setError(sendError.message);
     } finally {
