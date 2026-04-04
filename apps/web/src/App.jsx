@@ -10,6 +10,8 @@ import ProfilePage from "./pages/ProfilePage";
 import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
 import MatchesPage from "./pages/MatchesPage";
+import MessagesInboxPage from "./pages/MessagesInboxPage";
+import MessageThreadPage from "./pages/MessageThreadPage";
 
 function ProtectedRoute({ children }) {
   if (!isAuthenticated()) {
@@ -102,6 +104,22 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <MatchesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/messages"
+            element={
+              <ProtectedRoute>
+                <MessagesInboxPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/messages/:id"
+            element={
+              <ProtectedRoute>
+                <MessageThreadPage />
               </ProtectedRoute>
             }
           />

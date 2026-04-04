@@ -56,6 +56,7 @@ export default function Layout({ children }) {
           {loggedIn && (role === "investor" || role === "admin") && (
             <NavLink to="/matches">Matches</NavLink>
           )}
+          {loggedIn && <NavLink to="/messages">Messages</NavLink>}
           {loggedIn && <NavLink to="/logout">Logout</NavLink>}
         </nav>
       </header>
