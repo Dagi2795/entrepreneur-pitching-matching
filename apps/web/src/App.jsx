@@ -12,7 +12,6 @@ import SignUpPage from "./pages/SignUpPage";
 import MatchesPage from "./pages/MatchesPage";
 import MessagesInboxPage from "./pages/MessagesInboxPage";
 import MessageThreadPage from "./pages/MessageThreadPage";
-import NotificationsPage from "./pages/NotificationsPage";
 
 function ProtectedRoute({ children }) {
   if (!isAuthenticated()) {
@@ -121,14 +120,6 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <MessageThreadPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/notifications"
-            element={
-              <ProtectedRoute>
-                <NotificationsPage />
               </ProtectedRoute>
             }
           />

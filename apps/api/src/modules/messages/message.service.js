@@ -1,7 +1,6 @@
 const crypto = require("crypto");
 const { query } = require("@epm/db");
 const { getSessionUser } = require("../auth/auth.service");
-const { createNotification } = require("../notifications/notification.service");
 const { setCorsHeaders } = require("../../common/http");
 
 const conversationSubscribers = new Map();
@@ -339,23 +338,7 @@ async function createConversationFromPitch(req, pitchId) {
     throw createHttpError(400, "cannot start a conversation with yourself");
   }
 
-  const result = await createOrReuseConversation(user, [pitch.entrepreneur_id]);
-
-  if (result.created) {
-    await createNotification({
-      userId: pitch.entrepreneur_id,
-      type: "conversation_started",
-      title: "New investor contact",
-      body: `${user.name} opened a conversation about your pitch.`,
-      metadata: {
-        conversationId: result.conversation.id,
-        pitchId,
-        actorUserId: user.id,
-      },
-    });
-  }
-
-  return result;
+  return createOrReuseConversation(user, [pitch.entrepreneur_id]);
 }
 
 async function ensureConversationAccess(conversationId, userId) {
@@ -561,30 +544,6 @@ async function sendMessage(req, conversationId, payload) {
   );
 
   const message = mapMessageRow(messageResult.rows[0]);
-
-  const recipientResult = await query(
-    `
-      SELECT user_id
-      FROM conversation_participants
-      WHERE conversation_id = $1 AND user_id <> $2
-    `,
-    [conversationId, user.id]
-  );
-
-  for (const row of recipientResult.rows) {
-    await createNotification({
-      userId: row.user_id,
-      type: "new_message",
-      title: "New message",
-      body: `${user.name}: ${message.body}`,
-      metadata: {
-        conversationId,
-        messageId: message.id,
-        actorUserId: user.id,
-      },
-    });
-  }
-
   publishConversationMessage(message);
 
   return {

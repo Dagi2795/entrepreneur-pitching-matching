@@ -62,29 +62,12 @@ body {
   border-radius: 999px;
   padding: 8px 12px;
   font-size: 14px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
 }
 
 .nav-link.active {
   background: var(--accent);
   color: #fff;
   border-color: var(--accent);
-}
-
-.nav-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  border-radius: 999px;
-  background: #d42f2f;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 0 6px;
 }
 
 .page-wrap {
@@ -353,38 +336,6 @@ button:disabled {
 .message-bubble p {
   margin: 8px 0 0;
   white-space: pre-wrap;
-}
-
-.notification-list {
-  display: grid;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-.notification-item {
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: #fff;
-  padding: 14px;
-  display: grid;
-  gap: 8px;
-}
-
-.notification-item.unread {
-  border-color: #8eb4f7;
-  box-shadow: 0 0 0 2px rgba(26, 86, 219, 0.08);
-}
-
-.notification-item-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.notification-item-top h3 {
-  margin: 0;
 }
 
 .message-meta {

@@ -12,7 +12,6 @@ const { handleAuthRoutes } = require("./modules/auth/auth.routes");
 const { handlePitchRoutes } = require("./modules/pitch/pitch.routes");
 const { handleMatchingRoutes } = require("./modules/matching/matching.routes");
 const { handleMessageRoutes } = require("./modules/messages/message.routes");
-const { handleNotificationRoutes } = require("./modules/notifications/notification.routes");
 
 const port = process.env.PORT || 4000;
 
@@ -39,10 +38,6 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (await handleMessageRoutes(req, res)) {
-      return;
-    }
-
-    if (await handleNotificationRoutes(req, res)) {
       return;
     }
 
