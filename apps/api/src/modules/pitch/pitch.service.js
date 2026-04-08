@@ -163,9 +163,49 @@ async function listMyPitches(req) {
   return result.rows.map(mapPitchRow);
 }
 
-async function listAllPitches(req) {
+function buildPitchBrowseFilterQuery(filters = {}) {
+  const clauses = [];
+  const params = [];
+
+  if (filters.keyword) {
+    params.push(`%${filters.keyword}%`);
+    clauses.push(`(
+      p.startup_name ILIKE $${params.length}
+      OR p.business_overview ILIKE $${params.length}
+      OR p.problem_solution ILIKE $${params.length}
+      OR p.market_opportunity ILIKE $${params.length}
+      OR u.name ILIKE $${params.length}
+    )`);
+  }
+
+  if (typeof filters.minFunding === "number") {
+    params.push(filters.minFunding);
+    clauses.push(`p.funding_request >= $${params.length}`);
+  }
+
+  if (typeof filters.maxFunding === "number") {
+    params.push(filters.maxFunding);
+    clauses.push(`p.funding_request <= $${params.length}`);
+  }
+
+  if (clauses.length === 0) {
+    return {
+      whereSql: "",
+      params,
+    };
+  }
+
+  return {
+    whereSql: `WHERE ${clauses.join(" AND ")}`,
+    params,
+  };
+}
+
+async function listAllPitches(req, filters = {}) {
   const user = await getSessionUser(req);
   ensureInvestorOrAdmin(user);
+
+  const { whereSql, params } = buildPitchBrowseFilterQuery(filters);
 
   const result = await query(
     `
@@ -175,8 +215,10 @@ async function listAllPitches(req) {
              p.created_at, p.updated_at
       FROM pitches p
       JOIN users u ON u.id = p.entrepreneur_id
+      ${whereSql}
       ORDER BY p.created_at DESC
-    `
+    `,
+    params
   );
 
   return result.rows.map(mapPitchRow);

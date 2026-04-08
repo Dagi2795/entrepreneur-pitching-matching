@@ -8,6 +8,46 @@ const {
   deletePitch,
 } = require("./pitch.service");
 
+function createHttpError(statusCode, message) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+}
+
+function parseFundingParam(rawValue, label) {
+  if (rawValue === null || rawValue === "") {
+    return undefined;
+  }
+
+  const parsed = Number(rawValue);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    throw createHttpError(400, `${label} must be a non-negative number`);
+  }
+
+  return parsed;
+}
+
+function parseBrowseFilters(req) {
+  const url = new URL(req.url, "http://localhost");
+  const keyword = String(url.searchParams.get("q") || "").trim();
+  const minFunding = parseFundingParam(url.searchParams.get("minFunding"), "minFunding");
+  const maxFunding = parseFundingParam(url.searchParams.get("maxFunding"), "maxFunding");
+
+  if (
+    typeof minFunding === "number" &&
+    typeof maxFunding === "number" &&
+    minFunding > maxFunding
+  ) {
+    throw createHttpError(400, "minFunding cannot be greater than maxFunding");
+  }
+
+  return {
+    keyword,
+    minFunding,
+    maxFunding,
+  };
+}
+
 async function createPitchController(req, res) {
   const payload = await readJsonBody(req);
   const pitch = await createPitch(req, payload);
@@ -20,7 +60,8 @@ async function listMyPitchesController(req, res) {
 }
 
 async function listAllPitchesController(req, res) {
-  const pitches = await listAllPitches(req);
+  const filters = parseBrowseFilters(req);
+  const pitches = await listAllPitches(req, filters);
   sendJson(req, res, 200, { pitches });
 }
 
