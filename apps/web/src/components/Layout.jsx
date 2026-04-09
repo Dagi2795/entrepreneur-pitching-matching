@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { isAuthenticated } from "../lib/auth";
 import { apiRequest } from "../lib/api";
+import { getUnreadNotificationCount } from "../lib/notifications";
 
 function NavLink({ to, children }) {
   const location = useLocation();
@@ -20,19 +21,27 @@ export default function Layout({ children }) {
   const loggedIn = isAuthenticated();
   const location = useLocation();
   const [role, setRole] = useState("");
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     async function loadRole() {
       if (!loggedIn) {
         setRole("");
+        setUnreadCount(0);
         return;
       }
 
       try {
-        const data = await apiRequest("/auth/me", { method: "GET" });
-        setRole(data.profile?.role || "");
+        const [me, unread] = await Promise.all([
+          apiRequest("/auth/me", { method: "GET" }),
+          getUnreadNotificationCount(),
+        ]);
+
+        setRole(me.profile?.role || "");
+        setUnreadCount(unread);
       } catch (error) {
         setRole("");
+        setUnreadCount(0);
       }
     }
 
@@ -59,6 +68,12 @@ export default function Layout({ children }) {
             <NavLink to="/matches">Matches</NavLink>
           )}
           {loggedIn && <NavLink to="/messages">Messages</NavLink>}
+          {loggedIn && (
+            <NavLink to="/notifications">
+              Notifications
+              {unreadCount > 0 && <span className="nav-badge">{unreadCount}</span>}
+            </NavLink>
+          )}
           {loggedIn && <NavLink to="/logout">Logout</NavLink>}
         </nav>
       </header>
