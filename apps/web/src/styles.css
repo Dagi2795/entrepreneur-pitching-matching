@@ -429,6 +429,13 @@ button:disabled {
   gap: 12px;
 }
 
+.admin-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
 .detail-card ul {
   margin: 6px 0 0;
   padding-left: 20px;

@@ -13,6 +13,7 @@ import MatchesPage from "./pages/MatchesPage";
 import MessagesInboxPage from "./pages/MessagesInboxPage";
 import MessageThreadPage from "./pages/MessageThreadPage";
 import NotificationsPage from "./pages/NotificationsPage";
+import AdminPage from "./pages/AdminPage";
 
 function ProtectedRoute({ children }) {
   if (!isAuthenticated()) {
@@ -129,6 +130,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <NotificationsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <AdminPage />
               </ProtectedRoute>
             }
           />

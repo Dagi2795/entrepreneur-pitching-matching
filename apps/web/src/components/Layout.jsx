@@ -61,6 +61,7 @@ export default function Layout({ children }) {
           {loggedIn && <NavLink to="/profile">Profile</NavLink>}
           {loggedIn && role === "entrepreneur" && <NavLink to="/pitches/new">New Pitch</NavLink>}
           {loggedIn && role === "entrepreneur" && <NavLink to="/pitches/my">My Pitches</NavLink>}
+          {loggedIn && role === "admin" && <NavLink to="/admin">Admin</NavLink>}
           {loggedIn && (role === "investor" || role === "admin") && (
             <NavLink to="/pitches/browse">Browse Pitches</NavLink>
           )}
