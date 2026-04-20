@@ -1,0 +1,18 @@
+{
+  "name": "@epm/ui",
+  "private": true,
+  "version": "0.0.1",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./globals.css": "./src/globals.css",
+    "./button": "./src/button.tsx",
+    "./card": "./src/card.tsx",
+    "./code": "./src/code.tsx"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.1"
+  }
+}

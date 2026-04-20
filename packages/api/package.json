@@ -1,0 +1,20 @@
+{
+  "name": "@epm/api",
+  "private": true,
+  "version": "0.0.1",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./common/*": "./src/common/*.js",
+    "./health/*": "./src/health/*.js",
+    "./auth/*": "./src/auth/*.js",
+    "./pitch/*": "./src/pitch/*.js",
+    "./matching/*": "./src/matching/*.js",
+    "./messages/*": "./src/messages/*.js",
+    "./notifications/*": "./src/notifications/*.js",
+    "./admin/*": "./src/admin/*.js"
+  },
+  "dependencies": {
+    "@epm/db": "workspace:*"
+  }
+}

@@ -1,19 +1,19 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import Layout from "./components/Layout";
 import { isAuthenticated } from "./lib/auth";
-import AdminPage from "@epm/components/web/pages/AdminPage";
-import LogoutPage from "@epm/components/web/pages/LogoutPage";
-import MatchesPage from "@epm/components/web/pages/MatchesPage";
-import MessagesInboxPage from "@epm/components/web/pages/MessagesInboxPage";
-import MessageThreadPage from "@epm/components/web/pages/MessageThreadPage";
-import NotificationsPage from "@epm/components/web/pages/NotificationsPage";
-import PitchBrowsePage from "@epm/components/web/pages/PitchBrowsePage";
-import PitchEditPage from "@epm/components/web/pages/PitchEditPage";
-import PitchMyPage from "@epm/components/web/pages/PitchMyPage";
-import PitchNewPage from "@epm/components/web/pages/PitchNewPage";
-import ProfilePage from "@epm/components/web/pages/ProfilePage";
-import SignInPage from "@epm/components/web/pages/SignInPage";
-import SignUpPage from "@epm/components/web/pages/SignUpPage";
+import Layout from "./components/Layout";
+import AdminPage from "./pages/AdminPage";
+import LogoutPage from "./pages/LogoutPage";
+import MatchesPage from "./pages/MatchesPage";
+import MessagesInboxPage from "./pages/MessagesInboxPage";
+import MessageThreadPage from "./pages/MessageThreadPage";
+import NotificationsPage from "./pages/NotificationsPage";
+import PitchBrowsePage from "./pages/PitchBrowsePage";
+import PitchEditPage from "./pages/PitchEditPage";
+import PitchMyPage from "./pages/PitchMyPage";
+import PitchNewPage from "./pages/PitchNewPage";
+import ProfilePage from "./pages/ProfilePage";
+import SignInPage from "./pages/SignInPage";
+import SignUpPage from "./pages/SignUpPage";
 
 function ProtectedRoute({ children }) {
   if (!isAuthenticated()) {

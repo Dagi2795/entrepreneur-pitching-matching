@@ -1,0 +1,152 @@
+module.exports = require("../index.js");
+const { Pool } = require("pg");
+
+function getConnectionString() {
+  if (process.env.DATABASE_URL) {
+    return process.env.DATABASE_URL;
+  }
+
+  const host = process.env.DB_HOST;
+  const port = process.env.DB_PORT || "5432";
+  const user = process.env.DB_USER;
+  const password = process.env.DB_PASSWORD;
+  const dbName = process.env.DB_NAME;
+
+  if (!host || !user || !password || !dbName) {
+    return null;
+  }
+
+  const encodedPassword = encodeURIComponent(password);
+  return `postgres://${user}:${encodedPassword}@${host}:${port}/${dbName}`;
+}
+
+const connectionString = getConnectionString();
+
+if (!connectionString) {
+  throw new Error(
+    "Set DATABASE_URL or DB_HOST/DB_PORT/DB_USER/DB_PASSWORD/DB_NAME for @epm/db"
+  );
+}
+
+const pool = new Pool({ connectionString });
+
+async function query(text, params) {
+  return pool.query(text, params);
+}
+
+async function initDb() {
+  await query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id UUID PRIMARY KEY,
+      name TEXT NOT NULL,
+      email TEXT NOT NULL UNIQUE,
+      role TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      bio TEXT,
+      interests TEXT,
+      contact_info TEXT,
+      photo_url TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT;");
+  await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS interests TEXT;");
+  await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS contact_info TEXT;");
+  await query("ALTER TABLE users ADD COLUMN IF NOT EXISTS photo_url TEXT;");
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS sessions (
+      token UUID PRIMARY KEY,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      revoked_at TIMESTAMPTZ
+    );
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS pitches (
+      id UUID PRIMARY KEY,
+      entrepreneur_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      startup_name TEXT NOT NULL,
+      business_overview TEXT NOT NULL,
+      problem_solution TEXT NOT NULL,
+      market_opportunity TEXT NOT NULL,
+      funding_request NUMERIC(14,2) NOT NULL,
+      supporting_media JSONB NOT NULL DEFAULT '[]'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS conversations (
+      id UUID PRIMARY KEY,
+      created_by UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      participants_key TEXT NOT NULL UNIQUE,
+      participant_count INTEGER NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      last_message_at TIMESTAMPTZ
+    );
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS conversation_participants (
+      conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (conversation_id, user_id)
+    );
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS messages (
+      id UUID PRIMARY KEY,
+      conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+      sender_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      body TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      read_at TIMESTAMPTZ
+    );
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS notifications (
+      id UUID PRIMARY KEY,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      body TEXT,
+      metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      read_at TIMESTAMPTZ
+    );
+  `);
+
+  await query(
+    "CREATE INDEX IF NOT EXISTS idx_conversations_last_message_at ON conversations (last_message_at DESC NULLS LAST, created_at DESC);"
+  );
+  await query(
+    "CREATE INDEX IF NOT EXISTS idx_conversation_participants_user_id ON conversation_participants (user_id);"
+  );
+  await query(
+    "CREATE INDEX IF NOT EXISTS idx_messages_conversation_created_at ON messages (conversation_id, created_at DESC);"
+  );
+  await query(
+    "CREATE INDEX IF NOT EXISTS idx_notifications_user_created_at ON notifications (user_id, created_at DESC);"
+  );
+  await query(
+    "CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications (user_id, read_at) WHERE read_at IS NULL;"
+  );
+}
+
+async function checkDbHealth() {
+  await query("SELECT 1");
+}
+
+module.exports = {
+  query,
+  initDb,
+  checkDbHealth,
+};

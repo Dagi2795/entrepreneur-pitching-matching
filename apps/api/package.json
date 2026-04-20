@@ -7,7 +7,7 @@
     "lint": "node -e \"console.log('api lint placeholder')\""
   },
   "dependencies": {
-    "@epm/components": "workspace:*",
+    "@epm/api": "workspace:*",
     "@epm/db": "workspace:*",
     "dotenv": "^16.6.1"
   }

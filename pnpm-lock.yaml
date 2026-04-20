@@ -14,9 +14,9 @@ importers:
 
   apps/api:
     dependencies:
-      '@epm/components':
+      '@epm/api':
         specifier: workspace:*
-        version: link:../../packages/components
+        version: link:../../packages/api
       '@epm/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -26,9 +26,9 @@ importers:
 
   apps/web:
     dependencies:
-      '@epm/components':
+      '@epm/ui':
         specifier: workspace:*
-        version: link:../../packages/components
+        version: link:../../packages/ui
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -46,20 +46,11 @@ importers:
         specifier: ^5.4.11
         version: 5.4.21
 
-  packages/components:
+  packages/api:
     dependencies:
       '@epm/db':
         specifier: workspace:*
         version: link:../db
-      react:
-        specifier: ^18.3.1
-        version: 18.3.1
-      react-dom:
-        specifier: ^18.3.1
-        version: 18.3.1(react@18.3.1)
-      react-router-dom:
-        specifier: ^6.30.1
-        version: 6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
   packages/config: {}
 
@@ -69,7 +60,23 @@ importers:
         specifier: ^8.16.3
         version: 8.20.0
 
+  packages/eslint-config: {}
+
   packages/shared: {}
+
+  packages/typescript-config: {}
+
+  packages/ui:
+    dependencies:
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+      react-router-dom:
+        specifier: ^6.30.1
+        version: 6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
 packages:
 

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { isAuthenticated } from "../lib/auth";
 import { apiRequest } from "../lib/api";
-import { getUnreadNotificationCount } from "@epm/components/web/lib/notifications";
+import { getUnreadNotificationCount } from "../lib/notifications";
 
 function NavLink({ to, children }) {
   const location = useLocation();
