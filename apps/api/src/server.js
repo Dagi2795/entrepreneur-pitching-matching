@@ -7,13 +7,15 @@ require("dotenv").config({
 
 const { initDb } = require("@epm/db");
 const { sendJson, handlePreflight } = require("./common/http");
-const { handleHealthRoutes } = require("./modules/health/health.routes");
-const { handleAuthRoutes } = require("./modules/auth/auth.routes");
-const { handlePitchRoutes } = require("./modules/pitch/pitch.routes");
-const { handleMatchingRoutes } = require("./modules/matching/matching.routes");
-const { handleMessageRoutes } = require("./modules/messages/message.routes");
-const { handleNotificationRoutes } = require("./modules/notifications/notification.routes");
-const { handleAdminRoutes } = require("./modules/admin/admin.routes");
+const { handleHealthRoutes } = require("@epm/components/api/health/health.routes");
+const { handleAuthRoutes } = require("@epm/components/api/auth/auth.routes");
+const { handlePitchRoutes } = require("@epm/components/api/pitch/pitch.routes");
+const { handleMatchingRoutes } = require("@epm/components/api/matching/matching.routes");
+const { handleMessageRoutes } = require("@epm/components/api/messages/message.routes");
+const {
+  handleNotificationRoutes,
+} = require("@epm/components/api/notifications/notification.routes");
+const { handleAdminRoutes } = require("@epm/components/api/admin/admin.routes");
 
 const port = process.env.PORT || 4000;
 

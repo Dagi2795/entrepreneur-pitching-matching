@@ -14,6 +14,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@epm/components':
+        specifier: workspace:*
+        version: link:../../packages/components
       '@epm/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -23,6 +26,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@epm/components':
+        specifier: workspace:*
+        version: link:../../packages/components
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -39,6 +45,21 @@ importers:
       vite:
         specifier: ^5.4.11
         version: 5.4.21
+
+  packages/components:
+    dependencies:
+      '@epm/db':
+        specifier: workspace:*
+        version: link:../db
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+      react-router-dom:
+        specifier: ^6.30.1
+        version: 6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
 
   packages/config: {}
 

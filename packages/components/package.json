@@ -1,0 +1,14 @@
+{
+  "name": "@epm/components",
+  "private": true,
+  "version": "0.0.1",
+  "main": "index.js",
+  "peerDependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.30.1"
+  },
+  "dependencies": {
+    "@epm/db": "workspace:*"
+  }
+}
